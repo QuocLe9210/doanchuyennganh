@@ -2,9 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import React, { useEffect } from "react";
-import { db } from "@/configs/db";
-import { USER_TABLE } from "@/configs/schema";
-import { eq } from "drizzle-orm";
+import axios from "axios";
 
 function Provider({ children }) {
   const { user, isLoaded } = useUser();
@@ -17,27 +15,26 @@ function Provider({ children }) {
 
   const CheckIsNewUser = async () => {
     try {
-      const result = await db
-        .select()
-        .from(USER_TABLE)
-        .where(eq(USER_TABLE.email, user?.primaryEmailAddress?.emailAddress));
+      // ✅ Serialize user data trước khi gửi
+      const userData = {
+        id: user.id,
+        fullName: user.fullName,
+        primaryEmailAddress: {
+          emailAddress: user.primaryEmailAddress?.emailAddress,
+        },
+        imageUrl: user.imageUrl,
+      };
 
-      console.log("User check result:", result);
+      console.log("Sending user data:", userData); // Debug log
 
-      if (result?.length === 0) {
-        const userResp = await db
-          .insert(USER_TABLE)
-          .values({
-            userName: user?.fullName, // ✅ Đổi từ name -> userName
-            email: user?.primaryEmailAddress?.emailAddress,
-            isMember: false, // ✅ Set default value
-          })
-          .returning({ id: USER_TABLE.id });
+      const resp = await axios.post("/api/create-user", { user: userData });
+      console.log("Response from create-user:", resp.data);
 
-        console.log("New user inserted:", userResp);
+      if (resp.data.success) {
+        console.log("User ID:", resp.data.userId);
       }
     } catch (error) {
-      console.error("Error checking/inserting user:", error);
+      console.error("Error calling create-user API:", error);
     }
   };
 
