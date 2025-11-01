@@ -5,11 +5,12 @@ function SelectOption() {
   const [selectedOption, setSelectedOption] = useState(null);
 
   const Options = [
-    { name: "Thi", icon: "/Thi.jpg" },
-    { name: "Thi", icon: "/Thi.jpg" },
-    { name: "Thi", icon: "/Thi.jpg" },
-    { name: "Thi", icon: "/Thi.jpg" },
-    { name: "Thi", icon: "/Thi.jpg" },
+    { name: "Thi chứng chỉ", icon: "/thi2.jpg" },
+    { name: "Giao tiếp hàng ngày", icon: "/thi.jpg" },
+    { name: "Tiếng Anh Công Sở", icon: "/phongvan.jpg" },
+    { name: "Phỏng vấn xin việc ", icon: "/xinviec.jpg" },
+    { name: "Khác  ", icon: "/khac.jpg" },
+   
   ];
 
   return (

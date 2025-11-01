@@ -85,7 +85,7 @@ function SideBar() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 shadow-md">
                 <Coins className="w-4 h-4 text-white" />
               </div>
-              <span className="text-sm font-semibold text-gray-700">Tín dụng</span>
+              <span className="text-sm font-semibold text-gray-700">Khóa học còn lại</span>
             </div>
             <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
               {availableCredits}
