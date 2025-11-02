@@ -1,16 +1,16 @@
+'use client'
 import React, { useState } from "react";
 import Image from "next/image";
 
-function SelectOption() {
+function SelectOption({ selectedStudyType }) {
   const [selectedOption, setSelectedOption] = useState(null);
 
   const Options = [
     { name: "Thi chứng chỉ", icon: "/thi2.jpg" },
     { name: "Giao tiếp hàng ngày", icon: "/thi.jpg" },
     { name: "Tiếng Anh Công Sở", icon: "/phongvan.jpg" },
-    { name: "Phỏng vấn xin việc ", icon: "/xinviec.jpg" },
-    { name: "Khác  ", icon: "/khac.jpg" },
-   
+    { name: "Phỏng vấn xin việc", icon: "/xinviec.jpg" },
+    { name: "Khác", icon: "/khac.jpg" },
   ];
 
   return (
@@ -23,13 +23,16 @@ function SelectOption() {
         {Options.map((option, index) => (
           <div
             key={index}
-            onClick={() => setSelectedOption(option.name)}
+            onClick={() => {
+              setSelectedOption(option.name);
+              selectedStudyType(option.name);
+            }}
             className={`group p-6 flex flex-col items-center justify-center border-2 
             rounded-2xl hover:shadow-xl hover:-translate-y-1 
             transition-all duration-300 cursor-pointer bg-white
             ${selectedOption === option.name 
               ? "border-purple-600 shadow-lg bg-purple-50" 
-              : "border-gray-200 hover:border-blue-400"
+              : "border-gray-200 hover:border-purple-400"
             }`}
           >
             <div className="relative w-24 h-24 mb-4 overflow-hidden rounded-xl">
