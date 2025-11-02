@@ -37,7 +37,7 @@ function SideBar() {
 
       {/* Create New Button */}
       <div className="p-5">
-        <Link href="/dashboard/create">
+        <Link href="/create" className="mt-10">
           <button className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]">
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
               <span className="text-xl">+</span>
