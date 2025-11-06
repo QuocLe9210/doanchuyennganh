@@ -13,7 +13,7 @@ export const STUDY_ENGLISH_TABLE = pgTable("study_english", {
   courseType: varchar().notNull(),
   topic: varchar().notNull(),
   difficultyLevel: varchar().default("Easy"),
-  courseLayout: json("course_layout"), // Thêm tên cột
+  courseLayout: json("course_layout"),
   createdBy: varchar().notNull(),
-  status: varchar().default("Genarating"),
+  status: varchar().default("Generating"),
 });
