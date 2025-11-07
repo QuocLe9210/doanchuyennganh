@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SelectOption from "./_components/SelectOption";
 import { Button } from "@/components/ui/button";
 import TopicInput from "./_components/TopicInput";
 import { useGenerateCourse } from "@/hooks/useGenerateCourse";
-import { useUser } from "@clerk/nextjs"; // ✅ Import useUser từ Clerk
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation"; // ✅ Sửa: next/navigation thay vì next/router
 
 // Icons
 const Loader2 = ({ className, size }) => (
@@ -19,7 +20,8 @@ const CheckCircle2 = ({ className, size }) => (
 );
 
 function Create() {
-  const { user } = useUser(); // ✅ Lấy thông tin user từ Clerk
+  const { user } = useUser();
+  const router = useRouter(); // ✅ Sử dụng router để redirect
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({
     studyType: "",
@@ -28,6 +30,19 @@ function Create() {
   });
 
   const { generateCourse, loading, error, data, progress, reset } = useGenerateCourse();
+
+  // ✅ Tự động redirect khi tạo thành công
+  useEffect(() => {
+    if (data && !loading && !error) {
+      // Đợi 2 giây để user xem thông báo thành công
+      const timer = setTimeout(() => {
+        console.log("✅ Redirecting to dashboard...");
+        router.push("/dashboard");
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [data, loading, error, router]);
 
   const handleUserInput = (fieldName, fieldValue) => {
     setFormData((prev) => ({
@@ -41,7 +56,6 @@ function Create() {
     console.log("📝 Final Form Data:", formData);
 
     try {
-      // ✅ THÊM USERID VÀO REQUEST
       const requestData = {
         ...formData,
         userId: user?.primaryEmailAddress?.emailAddress || user?.id || "guest_user",
@@ -52,7 +66,6 @@ function Create() {
       const courseData = await generateCourse(requestData);
       console.log("✅ Generated Course:", courseData);
 
-      // Check if saved to database
       if (courseData.saved) {
         console.log("💾 Course saved with ID:", courseData.saved.courseID);
       } else {
@@ -85,7 +98,6 @@ function Create() {
         còn lại.
       </p>
 
-      {/* ✅ Hiển thị thông tin user */}
       {user && (
         <p className="text-sm text-gray-500 mt-2">
           👤 Đang tạo khóa học cho: <strong>{user.primaryEmailAddress?.emailAddress || user.id}</strong>
@@ -123,7 +135,6 @@ function Create() {
               </span>
             </div>
             
-            {/* Progress bar */}
             <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
               <div
                 className="bg-purple-600 h-2.5 rounded-full transition-all duration-500 ease-out"
@@ -162,7 +173,7 @@ function Create() {
         </div>
       )}
 
-      {/* Success message với preview */}
+      {/* Success message với countdown */}
       {data && !loading && !error && (
         <div className="mt-6 w-full max-w-2xl">
           <div className="p-4 bg-green-50 border border-green-200 rounded-lg shadow-sm flex items-start gap-3">
@@ -175,7 +186,11 @@ function Create() {
                 {data.courseName || "Khóa học của bạn"}
               </p>
 
-              {/* ✅ Database save status */}
+              {/* ✅ Redirect notification */}
+              <div className="bg-blue-50 p-2 rounded mb-2 text-sm border border-blue-200">
+                <span className="text-blue-700">🔄 Đang chuyển đến Dashboard...</span>
+              </div>
+
               {data.saved && data.saved.courseID && (
                 <div className="bg-white p-2 rounded mb-2 text-sm border border-green-200">
                   <span className="text-green-600 font-semibold">💾 Đã lưu vào database</span>
@@ -187,17 +202,15 @@ function Create() {
                 </div>
               )}
 
-              {/* ⚠️ Not saved warning */}
               {(!data.saved || !data.saved.courseID) && (
                 <div className="bg-amber-50 p-2 rounded mb-2 text-sm border border-amber-200">
                   <span className="text-amber-700">⚠️ Khóa học chưa được lưu vào database</span>
                   <p className="text-xs text-amber-600 mt-1">
-                    {!user ? "Vui lòng đăng nhập để lưu khóa học" : "Có lỗi khi lưu vào database"}
+                    {!user ? "Vui lòng đăng nhập để lưu khóa học" : "Có lỗi khi lưu"}
                   </p>
                 </div>
               )}
               
-              {/* Course stats */}
               {data.chapters && (
                 <div className="flex items-center gap-4 text-sm text-gray-600 mb-3 bg-white p-2 rounded">
                   <span>📚 {data.chapters.length} chương</span>
@@ -206,7 +219,6 @@ function Create() {
                 </div>
               )}
 
-              {/* Course description preview */}
               {data.description && (
                 <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                   {data.description}
@@ -216,21 +228,18 @@ function Create() {
               <div className="flex gap-2">
                 <Button
                   size="sm"
+                  onClick={() => router.push("/dashboard")}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Đến Dashboard ngay
+                </Button>
+                <Button
+                  size="sm"
                   onClick={handleReset}
                   variant="outline"
                   className="border-green-300 text-green-700 hover:bg-green-50"
                 >
                   Tạo khóa học khác
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    console.log("Full course data:", data);
-                    alert("Chi tiết khóa học đã được log ra console! Mở F12 để xem.");
-                  }}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Xem chi tiết
                 </Button>
               </div>
             </div>
@@ -279,14 +288,13 @@ function Create() {
       </div>
 
       {/* Debug panel */}
-      {process.env.NODE_ENV === "development" && (
+      {/* {process.env.NODE_ENV === "development" && (
         <div className="mt-8 w-full max-w-2xl">
           <details className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <summary className="cursor-pointer font-medium text-gray-700 mb-2">
-              🐛 Debug Info (Development Only)
+              🛠 Debug Info (Development Only)
             </summary>
             <div className="mt-2 space-y-2">
-              {/* ✅ User Info */}
               <div className="bg-white p-3 rounded border">
                 <p className="text-xs font-semibold text-gray-600 mb-1">User Info:</p>
                 <pre className="text-xs text-gray-700 overflow-auto">
@@ -299,7 +307,6 @@ function Create() {
                 </pre>
               </div>
 
-              {/* Form Data */}
               <div className="bg-white p-3 rounded border">
                 <p className="text-xs font-semibold text-gray-600 mb-1">Form Data:</p>
                 <pre className="text-xs text-gray-700 overflow-auto">
@@ -307,7 +314,6 @@ function Create() {
                 </pre>
               </div>
 
-              {/* State */}
               <div className="bg-white p-3 rounded border">
                 <p className="text-xs font-semibold text-gray-600 mb-1">State:</p>
                 <pre className="text-xs text-gray-700">
@@ -322,7 +328,6 @@ function Create() {
                 </pre>
               </div>
 
-              {/* Generated Data */}
               {data && (
                 <div className="bg-white p-3 rounded border">
                   <p className="text-xs font-semibold text-gray-600 mb-1">Generated Data:</p>
@@ -334,7 +339,7 @@ function Create() {
             </div>
           </details>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
