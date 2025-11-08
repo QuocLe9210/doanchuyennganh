@@ -1,11 +1,17 @@
 import { serve } from "inngest/next";
 import { inngest } from "../../../inngest/client";
-import { CreateNewUser, helloWorld } from "../../../inngest/functions";
+import {
+  CreateNewUser,
+  helloWorld,
+  GenerateNotes,
+} from "../../../inngest/functions";
 
+// Serve Inngest functions
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
-    helloWorld, // <-- This is where you'll always add all your functions
-    CreateNewUser,
+    helloWorld, // Test function
+    CreateNewUser, // Create new user when signed up
+    GenerateNotes, // Generate chapter notes with AI
   ],
 });

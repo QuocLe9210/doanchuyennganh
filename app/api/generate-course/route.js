@@ -1,13 +1,9 @@
-// ============================================
-// FILE: app/api/generate-course/route.js
-// ============================================
-// Copy toàn bộ file này vào: app/api/generate-course/route.js
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { db } from "@/configs/db";
 import { STUDY_ENGLISH_TABLE } from "@/configs/schema";
 import { v4 as uuidv4 } from "uuid";
+import { inngest } from "@/inngest/client";
 
 // ============================================
 // POST - Generate Course và Save vào Database
@@ -125,9 +121,9 @@ export async function POST(req) {
           courseType: studyType,
           topic: topic,
           difficultyLevel: difficultyLevel,
-          courseLayout: courseData, // Save full course as JSON
+          courseLayout: courseData,
           createdBy: userId,
-          status: "Generated",
+          status: "Generating",
         };
 
         // Insert into database
@@ -142,10 +138,26 @@ export async function POST(req) {
         };
 
         console.log("✅ Saved to database:", savedCourse);
+
+        // 10. Trigger Inngest function to generate notes
+        try {
+          console.log("🔔 Triggering GenerateNotes function...");
+          await inngest.send({
+            name: "notes.generate",
+            data: {
+              course: {
+                courseID: courseID,
+              },
+            },
+          });
+          console.log("✅ GenerateNotes triggered successfully");
+        } catch (inngestError) {
+          console.error("⚠️ Inngest trigger failed:", inngestError.message);
+          // Don't fail the request, notes can be generated later
+        }
       } catch (dbError) {
         console.error("⚠️ Database save failed:", dbError.message);
         console.error("Stack:", dbError.stack);
-        // Don't fail the whole request, just log the error
         savedCourse = {
           error: "Database save failed",
           message: dbError.message,
@@ -155,7 +167,7 @@ export async function POST(req) {
       console.log("ℹ️ No userId provided, skipping database save");
     }
 
-    // 10. Return success response
+    // 11. Return success response
     return NextResponse.json({
       success: true,
       data: courseData,
@@ -241,6 +253,7 @@ export async function GET() {
     features: [
       "Generate course with AI",
       "Auto-save to database (if userId provided)",
+      "Trigger Inngest to generate chapter notes",
       "JSON response format",
     ],
     example: {
@@ -280,6 +293,8 @@ YÊU CẦU CHI TIẾT:
    - Tên chương rõ ràng
    - 2-4 bài học cụ thể
    - Mục tiêu học tập
+
+  
 
 3. **Mỗi bài học** bao gồm:
    - Tên bài học
@@ -356,14 +371,7 @@ function getDifficultyGuide(level) {
    - Câu phức tạp, nhiều mệnh đề
    - Yêu cầu tư duy phản biện cao`,
 
-    // Aliases (nếu user nhập khác)
     Easy: `
-   - Sử dụng từ vựng cơ bản, phổ biến
-   - Ngữ pháp đơn giản (hiện tại đơn, quá khứ đơn)
-   - Câu ngắn, dễ hiểu
-   - Giải thích chi tiết mọi khái niệm`,
-
-    Dễ: `
    - Sử dụng từ vựng cơ bản, phổ biến
    - Ngữ pháp đơn giản (hiện tại đơn, quá khứ đơn)
    - Câu ngắn, dễ hiểu
