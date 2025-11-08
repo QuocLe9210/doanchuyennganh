@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import TopicInput from "./_components/TopicInput";
 import { useGenerateCourse } from "@/hooks/useGenerateCourse";
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation"; // ✅ Sửa: next/navigation thay vì next/router
+import { useRouter } from "next/navigation";
+import { toast } from "sonner"; // ✅ ADD THIS IMPORT
 
 // Icons
 const Loader2 = ({ className, size }) => (
@@ -21,7 +22,7 @@ const CheckCircle2 = ({ className, size }) => (
 
 function Create() {
   const { user } = useUser();
-  const router = useRouter(); // ✅ Sử dụng router để redirect
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({
     studyType: "",
@@ -34,12 +35,17 @@ function Create() {
   // ✅ Tự động redirect khi tạo thành công
   useEffect(() => {
     if (data && !loading && !error) {
+      // Show success toast
+      toast.success("Khóa học đã được tạo thành công! 🎉", {
+        description: "Đang chuyển đến Dashboard..."
+      });
+
       // Đợi 2 giây để user xem thông báo thành công
       const timer = setTimeout(() => {
         console.log("✅ Redirecting to dashboard...");
         router.push("/dashboard");
       }, 2000);
-
+      
       return () => clearTimeout(timer);
     }
   }, [data, loading, error, router]);
@@ -74,6 +80,9 @@ function Create() {
 
     } catch (err) {
       console.error("❌ Error generating course:", err);
+      toast.error("Có lỗi xảy ra khi tạo khóa học", {
+        description: err.message || "Vui lòng thử lại"
+      });
     }
   };
 
@@ -286,60 +295,6 @@ function Create() {
           </Button>
         )}
       </div>
-
-      {/* Debug panel */}
-      {/* {process.env.NODE_ENV === "development" && (
-        <div className="mt-8 w-full max-w-2xl">
-          <details className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <summary className="cursor-pointer font-medium text-gray-700 mb-2">
-              🛠 Debug Info (Development Only)
-            </summary>
-            <div className="mt-2 space-y-2">
-              <div className="bg-white p-3 rounded border">
-                <p className="text-xs font-semibold text-gray-600 mb-1">User Info:</p>
-                <pre className="text-xs text-gray-700 overflow-auto">
-                  {JSON.stringify({
-                    isSignedIn: !!user,
-                    userId: user?.id,
-                    email: user?.primaryEmailAddress?.emailAddress,
-                    username: user?.username,
-                  }, null, 2)}
-                </pre>
-              </div>
-
-              <div className="bg-white p-3 rounded border">
-                <p className="text-xs font-semibold text-gray-600 mb-1">Form Data:</p>
-                <pre className="text-xs text-gray-700 overflow-auto">
-                  {JSON.stringify(formData, null, 2)}
-                </pre>
-              </div>
-
-              <div className="bg-white p-3 rounded border">
-                <p className="text-xs font-semibold text-gray-600 mb-1">State:</p>
-                <pre className="text-xs text-gray-700">
-                  {JSON.stringify({ 
-                    step, 
-                    loading, 
-                    hasError: !!error, 
-                    hasData: !!data,
-                    progress,
-                    saved: data?.saved || null
-                  }, null, 2)}
-                </pre>
-              </div>
-
-              {data && (
-                <div className="bg-white p-3 rounded border">
-                  <p className="text-xs font-semibold text-gray-600 mb-1">Generated Data:</p>
-                  <pre className="text-xs text-gray-700 overflow-auto max-h-64">
-                    {JSON.stringify(data, null, 2)}
-                  </pre>
-                </div>
-              )}
-            </div>
-          </details>
-        </div>
-      )} */}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -34,13 +35,15 @@ function CourseCardItem({ course }) {
 
       {/* Nút xem chi tiết */}
       <div className="mt-5 flex justify-end">
-       <Button
-          variant="onClick"
-          className="bg-purple-700 text-white hover:bg-purple-700 transition-colors"
-          
-        >
-          Xem chi tiết
-        </Button>
+        <Link href={course?.id ? `/course/${course.id}` : '#'}>
+          <Button
+            variant="onClick"
+            className="bg-purple-700 text-white hover:bg-purple-700 transition-colors"
+            disabled={!course?.id}
+          >
+            Xem chi tiết
+          </Button>
+        </Link> 
       </div>
     </div>
   );
