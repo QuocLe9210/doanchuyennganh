@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
 function CourseCardItem({ course }) {
+  // Dùng id (serial primary key) cho URL ngắn gọn
+  const courseLink = course?.id ? `/course/${course.id}` : '#';
+  
   return (
     <div className="border rounded-xl shadow-md p-5 bg-white hover:shadow-lg transition-all duration-300">
       {/* Ảnh khóa học */}
@@ -35,7 +38,7 @@ function CourseCardItem({ course }) {
 
       {/* Nút xem chi tiết */}
       <div className="mt-5 flex justify-end">
-        <Link href={course?.id ? `/course/${course.id}` : '#'}>
+        <Link href={courseLink}>
           <Button
             variant="onClick"
             className="bg-purple-700 text-white hover:bg-purple-700 transition-colors"
