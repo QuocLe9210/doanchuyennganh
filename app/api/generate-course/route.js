@@ -49,7 +49,7 @@ export async function POST(req) {
     console.log("🤖 Initializing Gemini AI...");
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.0-flash",
       generationConfig: {
         temperature: 1.0,
         topK: 40,
@@ -103,7 +103,7 @@ export async function POST(req) {
       studyType,
       topic,
       difficultyLevel,
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.0-flash",
     };
 
     // 9. Save to Database (if userId provided)
@@ -175,7 +175,7 @@ export async function POST(req) {
       stats: {
         duration,
         tokens: response.usageMetadata?.totalTokenCount || 0,
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-2.0-flash",
       },
     });
   } catch (error) {
@@ -392,3 +392,4 @@ function getDifficultyGuide(level) {
 
   return guides[level] || guides.Intermediate;
 }
+ư;
