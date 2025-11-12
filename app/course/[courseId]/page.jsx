@@ -4,19 +4,10 @@ import DashboardHeader from "@/app/dashboard/_components/DashboardHeader";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import {
-  BookOpen,
-  Clock,
-  Target,
-  ArrowLeft,
-  Play,
-  CheckCircle2,
-  Lock,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import Link from "next/link";
-import Image from "next/image";
+
+import CourseIntroCard from "./_components/CourseIntroCard";
+import StudyMaterialSection from "./_components/StudyMaterialSection";
+import ChapterList from "./_components/ChapterList";
 
 function Course() {
   const { courseId } = useParams();
@@ -46,12 +37,14 @@ function Course() {
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader />
-
-      {/* {Course Into} */}
-
-      {/* Study Meterials options */}
-
-      {/* Chapter List */}
+      < div className="mx-10 md:mx-36 lg:px-60 mt-10"  >
+        {/* {Course Into} */}
+        <CourseIntroCard course={course} />
+        {/* Study Meterials options */}
+        <StudyMaterialSection /> 
+        {/* Chapter List */}
+        <ChapterList course ={course} />
+      </div>
     </div>
   );
 }

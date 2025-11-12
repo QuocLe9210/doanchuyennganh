@@ -392,4 +392,3 @@ function getDifficultyGuide(level) {
 
   return guides[level] || guides.Intermediate;
 }
-ư;
