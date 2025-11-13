@@ -24,9 +24,13 @@ function Course() {
   const GetCourse = async () => {
     try {
       setLoading(true);
-      const result = await axios.get(`/api/courses?courseId=${courseId}`);
+      // Gọi API study-type để lấy cả course và materials
+      const result = await axios.post(`/api/study-type`, {
+        courseId: courseId,
+        studyType: "ALL"
+      });
       console.log("📚 Course data:", result.data);
-      setCourse(result.data.result);
+      setCourse(result.data.course); // Lấy course từ response
     } catch (error) {
       console.error("❌ Error fetching course:", error);
     } finally {
@@ -36,14 +40,14 @@ function Course() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
-      < div className="mx-10 md:mx-36 lg:px-60 mt-10"  >
-        {/* {Course Into} */}
+    
+      <div className="">
+        {/* Course Intro */}
         <CourseIntroCard course={course} />
-        {/* Study Meterials options */}
-        <StudyMaterialSection /> 
+        {/* Study Materials options */}
+        <StudyMaterialSection courseId={courseId} /> 
         {/* Chapter List */}
-        <ChapterList course ={course} />
+        <ChapterList course={course} />
       </div>
     </div>
   );
