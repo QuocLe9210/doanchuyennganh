@@ -52,25 +52,18 @@ export async function POST(req) {
     // ===========================================================
     if (studyType === "ALL") {
       try {
-        // Lấy notes
         const notesResult = await db
           .select()
           .from(CHAPTER_NOTES_TABLE)
           .where(eq(CHAPTER_NOTES_TABLE.courseId, actualCourseId));
 
-        console.log(`[API] Notes: ${notesResult.length} items`);
-
-        // Lấy flashcards
         const flashcardsResult = await db
           .select()
           .from(FLASHCARDS_TABLE)
           .where(eq(FLASHCARDS_TABLE.courseId, actualCourseId));
 
-        console.log(`[API] Flashcards: ${flashcardsResult.length} items`);
-
-        // Lấy quiz từ courseLayout
         const quizQuestions = extractQuizFromCourseLayout(courseLayout);
-        console.log(`[API] Quiz: ${quizQuestions.length} questions`);
+        const qaItems = extractQAFromCourseLayout(courseLayout);
 
         const response = {
           course: courseRecord[0],
@@ -87,14 +80,14 @@ export async function POST(req) {
             createdAt: item.createdAt,
           })),
           quiz: quizQuestions,
-          qa: [],
+          qa: qaItems,
         };
 
         console.log("[API] Response ready:", {
-          courseId: courseRecord[0].id,
           notesCount: response.notes.length,
           flashcardsCount: response.flashcards.length,
           quizCount: response.quiz.length,
+          qaCount: response.qa.length,
         });
 
         return NextResponse.json(response);
@@ -119,8 +112,6 @@ export async function POST(req) {
         .from(CHAPTER_NOTES_TABLE)
         .where(eq(CHAPTER_NOTES_TABLE.courseId, actualCourseId));
 
-      console.log(`[API] Found ${notesResult.length} notes`);
-
       return NextResponse.json({
         notes: notesResult.map((item) => ({
           chapterId: item.chapterId || "Untitled Chapter",
@@ -134,15 +125,10 @@ export async function POST(req) {
     // XỬ LÝ FLASHCARDS
     // ===========================================================
     if (studyType === "flashcard") {
-      // Kiểm tra flashcards đã có chưa
       const existingFlashcards = await db
         .select()
         .from(FLASHCARDS_TABLE)
         .where(eq(FLASHCARDS_TABLE.courseId, actualCourseId));
-
-      console.log(
-        `[API] Found ${existingFlashcards.length} existing flashcards`
-      );
 
       if (existingFlashcards && existingFlashcards.length > 0) {
         return NextResponse.json({
@@ -156,15 +142,10 @@ export async function POST(req) {
         });
       }
 
-      // Generate từ notes
       const notesResult = await db
         .select()
         .from(CHAPTER_NOTES_TABLE)
         .where(eq(CHAPTER_NOTES_TABLE.courseId, actualCourseId));
-
-      console.log(
-        `[API] Found ${notesResult.length} notes to generate flashcards`
-      );
 
       if (!notesResult || notesResult.length === 0) {
         return NextResponse.json({
@@ -179,7 +160,6 @@ export async function POST(req) {
 
       const flashcards = generateFlashcardsFromNotes(notesResult);
 
-      // Lưu vào database
       try {
         for (const card of flashcards) {
           await db.insert(FLASHCARDS_TABLE).values({
@@ -189,23 +169,18 @@ export async function POST(req) {
             difficulty: card.difficulty || "medium",
           });
         }
-        console.log(`[API] Saved ${flashcards.length} flashcards to database`);
       } catch (error) {
         console.error("[API] Error saving flashcards:", error);
       }
 
-      return NextResponse.json({
-        flashcards: flashcards,
-      });
+      return NextResponse.json({ flashcards: flashcards });
     }
 
     // ===========================================================
-    // XỬ LÝ QUIZ - LẤY TỪ COURSE_LAYOUT
+    // XỬ LÝ QUIZ
     // ===========================================================
     if (studyType === "quiz") {
       const quizQuestions = extractQuizFromCourseLayout(courseLayout);
-
-      console.log(`[API] Found ${quizQuestions.length} quiz questions`);
 
       if (quizQuestions.length === 0) {
         return NextResponse.json({
@@ -215,15 +190,37 @@ export async function POST(req) {
               question: "Chưa có câu hỏi quiz",
               options: ["Vui lòng tạo quiz trong course layout"],
               correctAnswer: "",
-              explanation: "No quiz available for this course",
+              explanation: "",
             },
           ],
         });
       }
 
-      return NextResponse.json({
-        questions: quizQuestions,
-      });
+      return NextResponse.json({ questions: quizQuestions });
+    }
+
+    // ===========================================================
+    // XỬ LÝ Q&A
+    // ===========================================================
+    if (studyType === "qa" || studyType === "Q&A") {
+      const qaItems = extractQAFromCourseLayout(courseLayout);
+
+      console.log(`[API] Found ${qaItems.length} Q&A items`);
+
+      if (qaItems.length === 0) {
+        return NextResponse.json({
+          questions: [
+            {
+              chapterId: "No Q&A Available",
+              question: "Chưa có câu hỏi",
+              answer: "Vui lòng tạo nội dung Q&A trong course layout",
+              explanation: "",
+            },
+          ],
+        });
+      }
+
+      return NextResponse.json({ questions: qaItems });
     }
 
     return NextResponse.json(
@@ -233,23 +230,19 @@ export async function POST(req) {
   } catch (error) {
     console.error("Error in study-type API:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-        message: error.message,
-      },
+      { error: "Internal server error", message: error.message },
       { status: 500 }
     );
   }
 }
 
 // ===========================================================
-// HELPER: Extract Quiz từ Course Layout
+// HELPER: Extract Quiz
 // ===========================================================
 function extractQuizFromCourseLayout(courseLayout) {
   const allQuestions = [];
 
   try {
-    // Parse nếu là string
     let layoutData = courseLayout;
     if (typeof courseLayout === "string") {
       try {
@@ -260,7 +253,6 @@ function extractQuizFromCourseLayout(courseLayout) {
       }
     }
 
-    // Kiểm tra structure - có thể là object hoặc array
     let chapters = [];
 
     if (layoutData && Array.isArray(layoutData)) {
@@ -270,25 +262,17 @@ function extractQuizFromCourseLayout(courseLayout) {
       layoutData.chapters &&
       Array.isArray(layoutData.chapters)
     ) {
-      // Structure: { chapters: [...] }
       chapters = layoutData.chapters;
     } else {
-      console.log("[API] Could not find chapters in courseLayout");
       return [];
     }
 
-    console.log(`[API] Found ${chapters.length} chapters to process`);
-
-    // Extract quiz từ mỗi chapter và lesson
     chapters.forEach((chapter, chapterIndex) => {
       const chapterName =
         chapter.chapterName ||
         chapter.chapterTitle ||
         `Chapter ${chapterIndex + 1}`;
 
-      console.log(`[API] Processing chapter ${chapterIndex}: ${chapterName}`);
-
-      // Kiểm tra quiz trực tiếp trong chapter
       if (chapter.quiz && Array.isArray(chapter.quiz)) {
         chapter.quiz.forEach((quizItem) => {
           allQuestions.push({
@@ -301,20 +285,11 @@ function extractQuizFromCourseLayout(courseLayout) {
         });
       }
 
-      // Kiểm tra quiz trong lessons
       if (chapter.lessons && Array.isArray(chapter.lessons)) {
-        console.log(
-          `[API] Chapter ${chapterIndex} has ${chapter.lessons.length} lessons`
-        );
-
         chapter.lessons.forEach((lesson, lessonIndex) => {
           const lessonName = lesson.lessonName || `Lesson ${lessonIndex + 1}`;
 
           if (lesson.quiz && Array.isArray(lesson.quiz)) {
-            console.log(
-              `[API] Found ${lesson.quiz.length} quiz items in lesson ${lessonIndex}`
-            );
-
             lesson.quiz.forEach((quizItem) => {
               allQuestions.push({
                 chapterId: `${chapterName} - ${lessonName}`,
@@ -328,18 +303,78 @@ function extractQuizFromCourseLayout(courseLayout) {
         });
       }
     });
-
-    console.log(`[API] Total quiz questions extracted: ${allQuestions.length}`);
   } catch (error) {
     console.error("[API] Error extracting quiz:", error);
-    console.error("[API] Stack trace:", error.stack);
   }
 
   return allQuestions;
 }
 
 // ===========================================================
-// HELPER: Generate Flashcards từ Notes
+// HELPER: Extract Q&A
+// ===========================================================
+function extractQAFromCourseLayout(courseLayout) {
+  const allQA = [];
+
+  try {
+    let layoutData = courseLayout;
+    if (typeof courseLayout === "string") {
+      try {
+        layoutData = JSON.parse(courseLayout);
+      } catch (e) {
+        console.error("[API] Error parsing course_layout:", e);
+        return [];
+      }
+    }
+
+    let chapters = [];
+
+    if (layoutData && Array.isArray(layoutData)) {
+      chapters = layoutData;
+    } else if (
+      layoutData &&
+      layoutData.chapters &&
+      Array.isArray(layoutData.chapters)
+    ) {
+      chapters = layoutData.chapters;
+    } else {
+      return [];
+    }
+
+    chapters.forEach((chapter, chapterIndex) => {
+      const chapterName =
+        chapter.chapterName ||
+        chapter.chapterTitle ||
+        `Chapter ${chapterIndex + 1}`;
+
+      if (chapter.lessons && Array.isArray(chapter.lessons)) {
+        chapter.lessons.forEach((lesson, lessonIndex) => {
+          const lessonName = lesson.lessonName || `Lesson ${lessonIndex + 1}`;
+
+          if (lesson.examples && Array.isArray(lesson.examples)) {
+            lesson.examples.forEach((example) => {
+              allQA.push({
+                chapterId: `${chapterName} - ${lessonName}`,
+                question: example.english || "",
+                answer: example.vietnamese || "",
+                explanation: example.explanation || "",
+              });
+            });
+          }
+        });
+      }
+    });
+
+    console.log(`[API] Total Q&A items extracted: ${allQA.length}`);
+  } catch (error) {
+    console.error("[API] Error extracting Q&A:", error);
+  }
+
+  return allQA;
+}
+
+// ===========================================================
+// HELPER: Generate Flashcards
 // ===========================================================
 function generateFlashcardsFromNotes(notes) {
   const flashcards = [];
@@ -348,32 +383,31 @@ function generateFlashcardsFromNotes(notes) {
     const content = noteItem.note || "";
     const chapterName = noteItem.chapterId || "Chapter";
 
-    if (!content || content.trim().length === 0) {
-      return;
-    }
+    if (!content || content.trim().length === 0) return;
 
     const lines = content.split("\n").filter((line) => line.trim().length > 0);
 
     lines.forEach((line, index) => {
       const trimmedLine = line.trim();
 
-      // 1. Tìm heading
       if (trimmedLine.match(/^#{1,6}\s+/)) {
         const heading = trimmedLine.replace(/^#{1,6}\s+/, "").trim();
         const nextLine = lines[index + 1];
 
-        if (heading.length > 5 && heading.length < 150) {
-          if (nextLine && !nextLine.match(/^#{1,6}\s+/)) {
-            flashcards.push({
-              front: `${chapterName}: ${heading}`,
-              back: nextLine.trim(),
-              difficulty: "medium",
-            });
-          }
+        if (
+          heading.length > 5 &&
+          heading.length < 150 &&
+          nextLine &&
+          !nextLine.match(/^#{1,6}\s+/)
+        ) {
+          flashcards.push({
+            front: `${chapterName}: ${heading}`,
+            back: nextLine.trim(),
+            difficulty: "medium",
+          });
         }
       }
 
-      // 2. Tìm định nghĩa
       if (trimmedLine.includes(":")) {
         const parts = trimmedLine.split(/[:]/);
         if (parts.length === 2) {
@@ -389,52 +423,9 @@ function generateFlashcardsFromNotes(notes) {
           }
         }
       }
-
-      // 3. Tìm "A là B"
-      const match = trimmedLine.match(/^(.+?)\s+là\s+(.+)$/);
-      if (match) {
-        const term = match[1].trim().replace(/^[-*•]\s+/, "");
-        const definition = match[2].trim();
-
-        if (term.length > 3 && term.length < 100 && definition.length > 10) {
-          flashcards.push({
-            front: `${term} là gì?`,
-            back: definition,
-            difficulty: "easy",
-          });
-        }
-      }
-
-      // 4. Bullet points
-      if (trimmedLine.match(/^[-*•]\s+/)) {
-        const bulletContent = trimmedLine.replace(/^[-*•]\s+/, "").trim();
-
-        if (bulletContent.includes(":")) {
-          const [term, desc] = bulletContent.split(":");
-          if (
-            term.length > 3 &&
-            term.length < 100 &&
-            desc &&
-            desc.length > 10
-          ) {
-            flashcards.push({
-              front: term.trim(),
-              back: desc.trim(),
-              difficulty: "medium",
-            });
-          }
-        } else if (bulletContent.length > 30 && bulletContent.length < 200) {
-          flashcards.push({
-            front: `${chapterName}: Điểm chính`,
-            back: bulletContent,
-            difficulty: "medium",
-          });
-        }
-      }
     });
   });
 
-  // Loại bỏ trùng lặp
   const uniqueFlashcards = [];
   const seenFronts = new Set();
 
@@ -454,12 +445,9 @@ function generateFlashcardsFromNotes(notes) {
 export async function GET(req) {
   return NextResponse.json({
     message: "Study Type API",
-    supportedTypes: ["notes", "flashcard", "quiz", "ALL"],
+    supportedTypes: ["notes", "flashcard", "quiz", "qa", "ALL"],
     usage:
       "POST /api/study-type with body: { courseId: <study_english.id>, studyType }",
-    example: {
-      courseId: 27,
-      studyType: "quiz",
-    },
+    example: { courseId: 40, studyType: "qa" },
   });
 }
