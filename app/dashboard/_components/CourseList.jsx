@@ -2,16 +2,18 @@
 
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import CourseCardItem from "./CourseCardItem";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import { toast } from "sonner"; // ✅ ADD THIS
+import { toast } from "sonner";
+import { CourseCountContext } from "../../_context/CourseCountContext";
 
 function CourseList() {
   const { user } = useUser();
   const [courseList, setCourseList] = useState([]);
-  const [loading, setLoading] = useState(false); // ✅ ADD loading state
+  const [loading, setLoading] = useState(false);
+  const { totalCourses, setTotalCourses } = useContext(CourseCountContext);
 
   useEffect(() => {
     if (user) {
@@ -21,7 +23,7 @@ function CourseList() {
 
   const GetCourseList = async () => {
     try {
-      setLoading(true); // ✅ Set loading true
+      setLoading(true);
       const email = user?.primaryEmailAddress?.emailAddress;
       console.log("📧 Email đang gửi:", email);
 
@@ -37,8 +39,8 @@ function CourseList() {
       console.log("📊 Kết quả:", result.data);
       const courses = result.data.result || [];
       setCourseList(courses);
+      setTotalCourses(courses.length);
 
-      // ✅ Show success toast
       if (courses.length > 0) {
         toast.success(`Đã tải ${courses.length} khóa học`, {
           description: "Danh sách khóa học đã được cập nhật"
@@ -51,12 +53,11 @@ function CourseList() {
     } catch (error) {
       console.error("❌ Lỗi khi lấy danh sách khóa học:", error);
       
-      // ✅ Show error toast with details
       toast.error("Không thể tải danh sách khóa học", {
         description: error.response?.data?.message || error.message || "Vui lòng thử lại"
       });
     } finally {
-      setLoading(false); // ✅ Set loading false
+      setLoading(false);
     }
   };
 
@@ -65,7 +66,6 @@ function CourseList() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-bold text-2xl">Danh sách khóa học của tôi</h2>
         
-        {/* ✅ Improved refresh button */}
         <Button 
           variant="outline" 
           onClick={GetCourseList}
@@ -78,7 +78,6 @@ function CourseList() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
-        {/* ✅ Show loading skeleton */}
         {loading && courseList.length === 0 && (
           <>
             {[1, 2, 3].map((i) => (
@@ -91,12 +90,10 @@ function CourseList() {
           </>
         )}
 
-        {/* ✅ Show courses */}
         {!loading && courseList.map((course, index) => (
           <CourseCardItem key={course.id || index} course={course} />
         ))}
 
-        {/* ✅ Improved empty state */}
         {!loading && courseList.length === 0 && (
           <div className="col-span-full text-center py-12">
             <div className="text-6xl mb-4">📚</div>

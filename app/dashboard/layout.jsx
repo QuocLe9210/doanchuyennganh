@@ -1,26 +1,30 @@
-import React from 'react'
+"use client"
+import React, { useState } from 'react'
 import SideBar from './_components/SideBar'
 import DashboardHeader from './_components/DashboardHeader'
+import { CourseCountContext } from '../_context/CourseCountContext'
 
 function DashboardLayout({ children }) {
-  return (
-    <div>
-      {/* Sidebar - Fixed bên trái */}
-      <div className='md:w-64 hidden md:block fixed'> {/* ✅ Sửa md: block thành md:block */}
-        <SideBar />
-      </div>
-      
+  const [totalCourses, setTotalCourses] = useState(0);
   
-      <div className='md:ml-64'> {/* ✅ Di chuyển md:ml-64 ra ngoài để bao cả header và children */}
-        {/* Header */}
-        <DashboardHeader />
+  return (
+    <CourseCountContext.Provider value={{totalCourses, setTotalCourses}}>
+      <div>
+        {/* Sidebar - Fixed bên trái */}
+        <div className='md:w-64 hidden md:block fixed'>
+          <SideBar />
+        </div>
         
-      
-        <div className='p-5'> 
-          {children}
+        <div className='md:ml-64'>
+          {/* Header */}
+          <DashboardHeader />
+          
+          <div className='p-5'> 
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </CourseCountContext.Provider>
   )
 }
 

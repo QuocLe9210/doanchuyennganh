@@ -1,13 +1,16 @@
 'use client'
-import React from "react";
+import React, { useContext } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, BookOpen, Sparkles, User, HelpCircle, LogOut, Coins } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useClerk } from "@clerk/nextjs";
+import { CourseCountContext } from "../../_context/CourseCountContext";
 
 function SideBar() {
   const pathname = usePathname();
+  const { signOut } = useClerk();
+  const { totalCourses } = useContext(CourseCountContext);
 
   const MenuList = [
     { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
@@ -17,10 +20,18 @@ function SideBar() {
     { name: "Trợ giúp", icon: HelpCircle, path: "/dashboard/help" },
   ];
 
-  // Thông tin credits (có thể lấy từ API hoặc database)
-  const availableCredits = 5;
-  const usedCredits = 1;
-  const percentageUsed = (usedCredits / availableCredits) * 100;
+  // Thông tin credits - Có thể tùy chỉnh dựa trên plan của user
+  const maxCourses = 5; // Free plan: 5 khóa học
+  const percentageUsed = (totalCourses / maxCourses) * 100;
+  const coursesLeft = Math.max(0, maxCourses - totalCourses);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
     <div className="h-screen bg-gradient-to-b from-white to-purple-50/30 shadow-xl border-r border-purple-100 flex flex-col">
@@ -37,7 +48,7 @@ function SideBar() {
 
       {/* Create New Button */}
       <div className="p-5">
-        <Link href="/create" className="mt-10">
+        <Link href="/create">
           <button className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]">
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
               <span className="text-xl">+</span>
@@ -88,7 +99,7 @@ function SideBar() {
               <span className="text-sm font-semibold text-gray-700">Khóa học còn lại</span>
             </div>
             <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              {availableCredits}
+              {coursesLeft}
             </span>
           </div>
           
@@ -97,7 +108,7 @@ function SideBar() {
             <div className="w-full bg-purple-200/50 rounded-full h-2.5 overflow-hidden">
               <div 
                 className="bg-gradient-to-r from-purple-500 to-indigo-500 h-2.5 rounded-full transition-all duration-500 shadow-sm relative overflow-hidden"
-                style={{ width: `${percentageUsed}%` }}
+                style={{ width: `${Math.min(percentageUsed, 100)}%` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
               </div>
@@ -107,9 +118,18 @@ function SideBar() {
           {/* Credits Used Text */}
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs text-purple-700 font-medium">
-              {usedCredits} / {availableCredits} Credits đã dùng
+              {totalCourses} / {maxCourses} Khóa học đã tạo
             </span>
           </div>
+          
+          {/* Warning if running low */}
+          {coursesLeft <= 1 && (
+            <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-xs text-amber-700 font-medium">
+                ⚠️  Hết khóa học! Nâng cấp ngay.
+              </p>
+            </div>
+          )}
           
           {/* Upgrade Link */}
           <Link href="/dashboard/upgrade">
@@ -118,6 +138,34 @@ function SideBar() {
               Nâng cấp ngay
             </button>
           </Link>
+        </div>
+      </div>
+
+      {/* User Profile & Logout */}
+      <div className="px-5 py-4 border-t border-purple-100 bg-white/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <UserButton 
+              afterSignOutUrl="/"
+              appearance={{
+                elements: {
+                  avatarBox: "w-10 h-10"
+                }
+              }}
+            />
+            <div className="hidden lg:block">
+              <p className="text-sm font-semibold text-gray-700">Tài khoản</p>
+              <p className="text-xs text-gray-500">Xem hồ sơ</p>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleLogout}
+            className="p-2 rounded-lg hover:bg-red-50 text-gray-600 hover:text-red-600 transition-all duration-200 group"
+            title="Đăng xuất"
+          >
+            <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
+          </button>
         </div>
       </div>
     </div>
