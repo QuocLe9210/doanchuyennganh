@@ -14,6 +14,7 @@ export const USER_TABLE = pgTable("users", {
   userName: varchar().notNull(),
   email: varchar().notNull(),
   isMember: boolean().default(false),
+  customerId: varchar(),
 });
 
 // Bảng khóa học
@@ -57,4 +58,10 @@ export const USER_PROGRESS_TABLE = pgTable("user_progress", {
   status: varchar().default("in-progress"),
   lastStudiedAt: timestamp("lastStudiedAt").defaultNow(),
   createdAt: timestamp("createdAt").defaultNow(),
+});
+
+export const PAYMENT_RECORDS_TABLE = pgTable("paymentRecords", {
+  id: serial().primaryKey(),
+  customerId: varchar().notNull(),
+  sessionId: varchar().notNull(),
 });
